@@ -106,36 +106,36 @@ app.use('/static', express.static(path.join(__dirname, 'public')));
 
 app.get('/static', (req, res) => {
 	res.render('index', {
-		rutaCSS: 'index',
-		rutaJS: 'index',
+		rutaCss: 'index',
+		rutaJs: 'index',
 	});
 });
 
 app.get('/static/realtimeproducts', (req, res) => {
 	res.render('realTimeProducts', {
-		rutaCSS: 'realTimeProducts',
-		rutaJS: 'realTimeProducts',
+		rutaCss: 'realTimeProducts',
+		rutaJs: 'realTimeProducts',
 	});
 });
 
 app.get('/static/chat', (req, res) => {
 	res.render('chat', {
-		rutaCSS: 'chat',
-		rutaJS: 'chat',
+		rutaCss: 'chat',
+		rutaJs: 'chat',
 	});
 });
 
 app.get('/static/products', (req, res) => {
 	res.render('products', {
-		rutaCSS: 'products',
-		rutaJS: 'products',
+		rutaCss: 'products',
+		rutaJs: 'products',
 	});
 });
 
 app.get('/static/carts/:cid', (req, res) => {
 	res.render('carts', {
-		rutaCSS: 'carts',
-		rutaJS: 'carts',
+		rutaCss: 'carts',
+		rutaJs: 'carts',
 	});
 });
 

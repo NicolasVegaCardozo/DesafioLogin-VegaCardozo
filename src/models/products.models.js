@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import paginate from 'mongoose-paginate-v2';
 
 const productSchema = new Schema({
     title: {
@@ -34,6 +35,6 @@ const productSchema = new Schema({
     thumbnails: []
 })
 
+productSchema.plugin(paginate);
 const productModel = model('products', productSchema)
-
 export default productModel 
