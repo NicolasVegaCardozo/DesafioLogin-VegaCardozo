@@ -1,35 +1,27 @@
+import 'dotenv/config';
 import express from 'express';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import { engine } from 'express-handlebars';
 import { Server } from 'socket.io';
 import { __dirname } from './path.js';
 import path from 'path';
 import mongoose from 'mongoose';
-import messageModel from './models/messages.models.js';
-import productRouter from './routes/products.routes.js';
+
 import cartRouter from './routes/cart.routes.js';
 import messageRouter from "./routes/messages.routes.js"
-import productModel from './models/products.models.js';
+import productRouter from './routes/products.routes.js';
+import sessionRouter from './routes/session.routes.js';
+import userRouter from './routes/user.routes.js';
+
 import cartModel from './models/carts.models.js';
+import messageModel from './models/messages.models.js';
+import productModel from './models/products.models.js';
+import userModel from './models/user.models.js';
 
 
 const app = express();
 const PORT = 8080;
-
-// Server
-const server = app.listen(PORT, () => {
-    console.log(`Server on port ${PORT}`);
-});
-
-const io = new Server(server);
-
-// Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Configuración del motor de plantillas Handlebars
-app.set('view engine', 'handlebars');
-app.engine('handlebars', engine());
-app.set('views', path.resolve(__dirname, './views'));
 
 // Conexion con base de datos
 mongoose.connect('mongodb+srv://nicolasvegacardozo:Edna-2023@cluster0.xvvavda.mongodb.net/?retryWrites=true&w=majority')
@@ -38,107 +30,138 @@ mongoose.connect('mongodb+srv://nicolasvegacardozo:Edna-2023@cluster0.xvvavda.mo
     })
     .catch((error) => console.log(`Error en conexion con MongoDB ATLAS:, ${error}`))
 
-// Conexion con socket.io
-io.on('connection', socket => {
+// Server
+const httpServer = app.listen(PORT, () => {
+    console.log(`Server on port ${PORT}`);
+});
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.engine('handlebars', engine({}));
+app.set('view engine', 'handlebars');
+app.set('views', path.resolve(__dirname, './views'));
+app.use(session({
+    store: MongoStore.create({
+        mongoUrl: 'mongodb+srv://nicolasvegacardozo:Edna-2023@cluster0.xvvavda.mongodb.net/?retryWrites=true&w=majority',
+        mongoOptions: { useNewUrlParser: true, useUnifiedTopology: true },
+        ttl: 90 // tiempo de duracion de la sesion.
+    }),
+    secret: process.env.SESSION_SECRET,
+    resave: true,
+    saveUninitialized: true
+}));
+app.use((req, res, next) => {
+    if (req.session.user) {
+        const user = req.session.user;
+        res.locals.welcomeMessage = `Welcome, ${user.first_name} ${user.last_name}!`;
+    }
+    next();
+});
+
+
+// Configuración del motor de plantillas Handlebars
+app.set('view engine', 'handlebars');
+app.engine('handlebars', engine());
+app.set('views', path.resolve(__dirname, './views'));
+
+
+// Socket
+const io = new Server(httpServer);
+
+io.on('connection', (socket) => {
     console.log('Conexión con Socket.io');
 
-    socket.on('load', async () => {
-        const pages = await productModel.paginate({}, { limit: 5 });
-        socket.emit('products', pages);
-    });
-
-    socket.on('previousPage', async page => {
-        const pages = await productModel.paginate({}, { limit: 5, page: page });
-        socket.emit('products', pages);
-    });
-
-    socket.on('nextPage', async page => {
-        const pages = await productModel.paginate({}, { limit: 5, page: page });
-        socket.emit('products', pages);
-    });
-
-    socket.on('addProduct', async data => {
-        const { pid, cartId } = data;
-        if (cartId) {
-            const cart = await cartModel.findById(cartId);
-            const productExists = cart.products.find(prod => prod.id_prod == pid);
-            if (productExists) {
-                productExists.quantity++;
-            } else {
-                cart.products.push({ id_prod: pid, quantity: 1 });
-            }
-            await cart.save();
-            socket.emit('success', cartId);
-        } else {
-            const cart = await cartModel.create({});
-            cart.products.push({ id_prod: pid, quantity: 1 });
-            await cart.save();
-            socket.emit('success', cart._id.toString());
+    socket.on('add-to-cart', async (productData) => {
+        let cart = await cartModel.findOne({ _id: "64f8fbb6d998a951bcb2774e" })
+        if (!cart) {
+            cart = await cartModel.create({ products: [] })
         }
+
+        cart.products.push({
+            product: productData._id,
+            quantity: 1
+        })
+
+        await cart.save()
+        console.log('Product added to cart:', productData)
     });
 
-    socket.on('loadCart', async cid => {
-        const cart = await cartModel.findById(cid);
-        socket.emit('cartProducts', cart.products);
-    });
+    socket.on('login', async (newUser) => {
+        const user = await userModel.findOne({ email: newUser.email })
 
-    socket.on('newProduct', async product => {
-        await productModel.create(product);
-        const products = await productModel.find();
-
-        socket.emit('products', products);
-    });
-
-    socket.on('mensaje', async info => {
-        const { email, message } = info;
-        await messageModel.create({
-            email,
-            message,
-        });
-        const messages = await messageModel.find();
-
-        socket.emit('mensajes', messages);
+        if (user) {
+            socket.emit('user', user)
+        }
     });
 });
 
 // Routes
-app.use('/static', express.static(path.join(__dirname, 'public')));
-
-app.get('/static', (req, res) => {
-	res.render('index', {
-		rutaCss: 'index',
-		rutaJs: 'index',
-	});
-});
-
-app.get('/static/realtimeproducts', (req, res) => {
-	res.render('realTimeProducts', {
-		rutaCss: 'realTimeProducts',
-		rutaJs: 'realTimeProducts',
-	});
-});
-
-app.get('/static/chat', (req, res) => {
-	res.render('chat', {
-		rutaCss: 'chat',
-		rutaJs: 'chat',
-	});
-});
-
-app.get('/static/products', (req, res) => {
-	res.render('products', {
-		rutaCss: 'products',
-		rutaJs: 'products',
-	});
-});
-
-app.get('/static/carts/:cid', (req, res) => {
-	res.render('carts', {
-		rutaCss: 'carts',
-		rutaJs: 'carts',
-	});
-});
-
-app.use('/api/products', productRouter); // defino que mi app va a usar lo que venga en productRouter para la ruta que defina
+app.use('/api/users', userRouter);
+app.use('/api/session', sessionRouter);
+app.use('/api/products', productRouter);
 app.use('/api/carts', cartRouter);
 app.use('/api/messages', messageRouter);
+
+// Serve static files from the "public" folder
+app.use('/static', express.static(path.join(__dirname, 'public')));
+
+app.get('/static/register', async (req, res) => {
+
+    res.render('register', {
+        pathJS: 'register',
+        pathCSS: 'register'
+    });
+});
+
+app.get('/static/login', async (req, res) => {
+    res.render('login', {
+        pathJS: 'login',
+        pathCSS: 'login'
+    });
+});
+
+app.get('/static/productsViews', async (req, res) => {
+    const cart = await cartModel.findOne({ _id: '64f8fbb6d998a951bcb2774e' })
+
+    const cleanData = {
+        products: cart.products.map(product => ({
+            title: product.id_prod.title,
+            description: product.id_prod.description,
+            price: product.id_prod.price,
+            quantity: product.quantity
+        }))
+    };
+
+    if (cart) {
+        const message = res.locals.welcomeMessage;
+
+        res.render('productsViews', {
+            message: message,
+            products: cleanData.products,
+            pathJS: 'productsViews',
+            pathCSS: 'productsViews'
+        });
+    }
+});
+
+app.get('/static/products', async (req, res) => {
+    const products = await productModel.find();
+
+    const cleanData = {
+        products: products.map(product => ({
+            title: product.title,
+            description: product.description,
+            category: product.category,
+            price: product.price,
+            stock: product.stock,
+            _id: product._id
+        }))
+    };
+
+    res.render('products', {
+        products: cleanData.products,
+        pathCSS: 'products',
+        pathJS: 'products'
+    });
+});
