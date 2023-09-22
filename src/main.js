@@ -15,7 +15,6 @@ import sessionRouter from './routes/session.routes.js';
 import userRouter from './routes/user.routes.js';
 
 import cartModel from './models/carts.models.js';
-import messageModel from './models/messages.models.js';
 import productModel from './models/products.models.js';
 import userModel from './models/user.models.js';
 
