@@ -36,14 +36,17 @@ const httpServer = app.listen(PORT, () => {
 });
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
 app.engine('handlebars', engine({}));
 app.set('view engine', 'handlebars');
 app.set('views', path.resolve(__dirname, './views'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Configuración de MongoStore para express-session
 app.use(session({
     store: MongoStore.create({
-        mongoUrl: 'mongodb+srv://nicolasvegacardozo:Edna-2023@cluster0.xvvavda.mongodb.net/?retryWrites=true&w=majority',
+        mongoUrl: process.env.MONGO_DB,
         mongoOptions: { useNewUrlParser: true, useUnifiedTopology: true },
         ttl: 90 // tiempo de duracion de la sesion.
     }),
@@ -58,7 +61,6 @@ app.use((req, res, next) => {
     }
     next();
 });
-
 
 // Configuración del motor de plantillas Handlebars
 app.set('view engine', 'handlebars');
