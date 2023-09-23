@@ -23,7 +23,7 @@ const app = express();
 const PORT = 8080;
 
 // Conexion con base de datos
-mongoose.connect('mongodb+srv://nicolasvegacardozo:Edna-2023@cluster0.xvvavda.mongodb.net/?retryWrites=true&w=majority')
+mongoose.connect(process.env.MONGO_DB)
     .then(() => {
         console.log("BDD conectada")
     })
