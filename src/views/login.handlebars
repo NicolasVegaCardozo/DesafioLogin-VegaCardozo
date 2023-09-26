@@ -1,13 +1,14 @@
 <section id="login-section">
     <h2>Login</h2>
-    <form method="post" action="http://localhost:8080/api/session/login">
+
+    <form method="POST" action="/static/login">
         <label for="email">
             Email:
-            <input type="email" name="email" id="email">
+            <input type="email" name="email" id="email" required>
         </label>
         <label for="password">
             Password:
-            <input type="password" name="password" id="password" autocomplete="...">
+            <input type="password" name="password" id="password" required>
         </label>
         <button type="submit" id="login">Log in</button>
     </form>

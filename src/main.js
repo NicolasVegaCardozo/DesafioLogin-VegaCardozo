@@ -104,65 +104,61 @@ app.use('/api/products', productRouter);
 app.use('/api/carts', cartRouter);
 app.use('/api/messages', messageRouter);
 
-// Serve static files from the "public" folder
+// Archivos estáticos desde la carpeta "públic"
 app.use('/static', express.static(path.join(__dirname, 'public')));
 
-app.get('/static/register', async (req, res) => {
+app.get
 
-    res.render('register', {
-        pathJS: 'register',
-        pathCSS: 'register'
+app.get('/static/sigin', async (req, res) => {
+
+    res.render('sigin', {
+        pathJS: 'sigin',
+        pathCSS: 'sigin'
     });
 });
 
 app.get('/static/login', async (req, res) => {
-    res.render('login', {
-        pathJS: 'login',
-        pathCSS: 'login'
-    });
-});
+    try {
+        // Obtener los datos enviados por el formulario de inicio de sesión
+        const { email, password } = req.body;
 
-app.get('/static/productsViews', async (req, res) => {
-    const cart = await cartModel.findOne({ _id: '64f8fbb6d998a951bcb2774e' })
+        // Verificar las credenciales del usuario y autenticarlo
+        const user = await userModel.findOne({ email });
+        if (!user || user.password !== password) {
+            // Si las credenciales son inválidas, mostrar un mensaje de error o redireccionar al formulario de inicio de sesión nuevamente
+            res.render('login', {
+                pathJS: 'login',
+                pathCSS: 'login',
+                error: 'Credenciales inválidas. Inténtalo nuevamente.',
+            });
+            return;
+        }
 
-    const cleanData = {
-        products: cart.products.map(product => ({
-            title: product.id_prod.title,
-            description: product.id_prod.description,
-            price: product.id_prod.price,
-            quantity: product.quantity
-        }))
-    };
+        // Almacenar el usuario en la sesión
+        req.session.user = user;
 
-    if (cart) {
-        const message = res.locals.welcomeMessage;
-
-        res.render('productsViews', {
-            message: message,
-            products: cleanData.products,
-            pathJS: 'productsViews',
-            pathCSS: 'productsViews'
-        });
+        // Redireccionar a la ruta de productos
+        res.redirect('/static/products');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error en el servidor');
     }
 });
 
 app.get('/static/products', async (req, res) => {
-    const products = await productModel.find();
+    // Obtener los productos y renderizar la vista
+    try {
+        const products = await productModel.find().lean();
 
-    const cleanData = {
-        products: products.map(product => ({
-            title: product.title,
-            description: product.description,
-            category: product.category,
-            price: product.price,
-            stock: product.stock,
-            _id: product._id
-        }))
-    };
-
-    res.render('products', {
-        products: cleanData.products,
-        pathCSS: 'products',
-        pathJS: 'products'
-    });
+        res.render('products', {
+            products,
+            pathCSS: 'products',
+            pathJS: 'products'
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error al obtener los productos');
+    }
 });
+
+

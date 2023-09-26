@@ -1,5 +1,16 @@
 <h1>Products</h1>
 
+{{#each products}}
+<ul>
+	<li>{{this.title}}</li>
+	<li>{{this.description}}</li>
+	<li>{{this.category}}</li>
+	<li>{{this.price}}</li>
+	<li>{{this.stock}}</li>
+	<li>{{this.code}}</li>
+</ul>
+{{/each}}
+
 <section id='products-container'></section>
 <section class='pagination'>
 	<button id='prev-page-button'>Prev</button>
