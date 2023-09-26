@@ -20,7 +20,7 @@ userRouter.get('/', async (req, res) => {
 
 
 // Crear usuario
-userRouter.post('/static/sigin', async (req, res) => {
+userRouter.post('/signin', async (req, res) => {
 	const {first_name, last_name, age, email, password} = req.body;
 
 	try {

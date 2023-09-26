@@ -109,40 +109,19 @@ app.use('/static', express.static(path.join(__dirname, 'public')));
 
 app.get
 
-app.get('/static/sigin', async (req, res) => {
+app.get('/static/signIn', async (req, res) => {
 
-    res.render('sigin', {
-        pathJS: 'sigin',
-        pathCSS: 'sigin'
+    res.render('signIn', {
+        pathJS: 'signIn',
+        pathCSS: 'signIn'
     });
 });
 
 app.get('/static/login', async (req, res) => {
-    try {
-        // Obtener los datos enviados por el formulario de inicio de sesión
-        const { email, password } = req.body;
-
-        // Verificar las credenciales del usuario y autenticarlo
-        const user = await userModel.findOne({ email });
-        if (!user || user.password !== password) {
-            // Si las credenciales son inválidas, mostrar un mensaje de error o redireccionar al formulario de inicio de sesión nuevamente
-            res.render('login', {
-                pathJS: 'login',
-                pathCSS: 'login',
-                error: 'Credenciales inválidas. Inténtalo nuevamente.',
-            });
-            return;
-        }
-
-        // Almacenar el usuario en la sesión
-        req.session.user = user;
-
-        // Redireccionar a la ruta de productos
-        res.redirect('/static/products');
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Error en el servidor');
-    }
+    res.render('login', {
+        pathJS: 'login',
+        pathCSS: 'login',
+    });
 });
 
 app.get('/static/products', async (req, res) => {
